@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 48" width="260" height="48">
+  <defs>
+    <linearGradient id="dw-accent" x1="0" y1="0" x2="120" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <text x="0" y="34"
+        font-family="'Space Grotesk','Inter',system-ui,-apple-system,sans-serif"
+        font-weight="700" font-size="34" letter-spacing="-1">
+    <tspan fill="#ffffff">de</tspan><tspan fill="url(#dw-accent)">we</tspan><tspan fill="#ffffff">lope</tspan>
+  </text>
+</svg>

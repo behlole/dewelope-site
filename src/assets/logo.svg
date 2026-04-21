@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0c0e1a"/>
+      <stop offset="1" stop-color="#06070d"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7c5cff"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="0.5" y="0.5" width="63" height="63" rx="13.5" fill="none" stroke="#7c5cff" stroke-opacity="0.35"/>
+  <text x="32" y="34" text-anchor="middle" dominant-baseline="central" font-family="'Space Grotesk','Inter',system-ui,-apple-system,Helvetica,Arial,sans-serif" font-weight="700" font-size="42" letter-spacing="-1" fill="url(#mark)">B</text>
+  <rect x="14" y="55" width="36" height="2" rx="1" fill="url(#mark)" opacity="0.7"/>
+</svg>
