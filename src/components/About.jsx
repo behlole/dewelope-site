@@ -6,6 +6,7 @@ import {services} from "../constants/index.js";
 import {fadeIn, textVariant} from "../utils/motion.js";
 import SectionWrapper from "../hoc/index.js";
 import {cn} from "../utils/cn.js";
+import ServiceCanvas from "./canvas/ServiceCanvas.jsx";
 
 const TILT_MAX = 8; // degrees
 
@@ -72,18 +73,22 @@ const ServiceCard = ({service, index}) => {
             />
 
             {/* top bar */}
-            <div className="relative z-10 flex items-center justify-between px-7 pt-7">
+            <div className="relative z-10 flex items-center justify-between px-6 sm:px-7 pt-6 sm:pt-7">
                 <span className="font-mono text-xs uppercase tracking-[0.3em] text-muted">
                     {String(index + 1).padStart(2, "0")}
                 </span>
                 <FiArrowUpRight className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-500"/>
             </div>
+            {/* 3D motif */}
+            <div className="relative z-10 mx-6 sm:mx-7 mt-4 mb-3 rounded-2xl overflow-hidden">
+                <ServiceCanvas shape={service.shape} tint={service.tint}/>
+            </div>
             {/* body */}
-            <div className="relative z-10 px-7 pb-8 pt-8">
-                <h3 className="font-display text-2xl sm:text-[26px] text-white font-semibold leading-tight">
+            <div className="relative z-10 px-6 sm:px-7 pb-7">
+                <h3 className="font-display text-xl sm:text-[22px] text-white font-semibold leading-tight">
                     {service.title}
                 </h3>
-                <p className="mt-3 text-secondary text-[14px] leading-relaxed">
+                <p className="mt-2 text-secondary text-[13.5px] leading-relaxed">
                     {service.description}
                 </p>
             </div>

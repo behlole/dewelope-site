@@ -77,31 +77,43 @@ const services = [
         title: "Full-Stack Engineering",
         description: "Angular, React, Next.js on Node, NestJS and Spring Boot. Schema to screen.",
         icon: web,
+        shape: "stack",
+        tint: "#7c5cff",
     },
     {
         title: "Microservices & Cloud",
         description: "Spring Cloud, GraphQL, REST. Clean boundaries, CI/CD, infra that scales.",
         icon: backend,
+        shape: "cluster",
+        tint: "#22d3ee",
     },
     {
         title: "Fintech & Banking",
         description: "Wallets, branchless banking, core flows. Audit-hardened, millions of users.",
         icon: creator,
+        shape: "vault",
+        tint: "#f0c160",
     },
     {
         title: "Legacy Modernization",
         description: "Query tuning, schema migration, incremental rewrites. Latency down, scale up.",
         icon: mobile,
+        shape: "gear",
+        tint: "#cbd2e5",
     },
     {
         title: "AI Integration",
         description: "LangChain, OpenAI, Anthropic. Production RAG, evals, guardrails.",
         icon: creator,
+        shape: "neural",
+        tint: "#a78bfa",
     },
     {
         title: "Staff Augmentation",
         description: "Senior engineers into your team, under your standards. Not parachuted.",
         icon: backend,
+        shape: "hex",
+        tint: "#22d3ee",
     },
 ];
 
