@@ -6,37 +6,9 @@ import {projects} from "../constants/index.js";
 import {fadeIn, textVariant} from "../utils/motion.js";
 import SectionWrapper from "../hoc/index.js";
 import ProjectDetail from "./ProjectDetail.jsx";
+import ProjectCanvas from "./canvas/ProjectCanvas.jsx";
 
 const TILT_MAX = 8;
-
-const Cover = ({coverArt, name, metric}) => (
-    <div
-        className="relative w-full h-full overflow-hidden"
-        style={{
-            background:
-                `radial-gradient(circle at 30% 20%, ${coverArt.from}55, transparent 50%),
-                 radial-gradient(circle at 80% 80%, ${coverArt.via}55, transparent 55%),
-                 linear-gradient(180deg, ${coverArt.to} 0%, #06070d 100%)`,
-        }}
-    >
-        <div className="absolute inset-0 flex items-center justify-center">
-            <div
-                className="font-display font-bold uppercase tracking-tight text-white/[0.08]"
-                style={{fontSize: "clamp(70px, 12vw, 180px)"}}
-            >
-                {coverArt.motif}
-            </div>
-        </div>
-        {metric && (
-            <div className="absolute top-5 right-5 text-right">
-                <div className="font-display text-white text-3xl font-bold leading-none">{metric.value}</div>
-                <div className="text-[10px] uppercase tracking-[0.25em] font-mono text-white/60 mt-1">
-                    {metric.label}
-                </div>
-            </div>
-        )}
-    </div>
-);
 
 const ProjectCard = ({project, index, onOpen}) => {
     const ref = useRef(null);
@@ -69,7 +41,7 @@ const ProjectCard = ({project, index, onOpen}) => {
         background: useMotionTemplate`radial-gradient(360px circle at ${useMotionTemplate`calc(${glowX} * 100%)`} ${useMotionTemplate`calc(${glowY} * 100%)`}, rgba(124,92,255,0.22), transparent 60%)`,
     };
 
-    const {name, company, description, tags, image, coverArt, metric} = project;
+    const {name, company, description, tags, motif3D, tint, metric} = project;
     const layoutId = `project-${project.name}`;
 
     return (
@@ -90,23 +62,8 @@ const ProjectCard = ({project, index, onOpen}) => {
             data-magnet
             aria-label={`${name} — open case study`}
         >
-            <div className="absolute inset-0">
-                {image ? (
-                    <img
-                        src={image}
-                        alt={name}
-                        width="1400"
-                        height="960"
-                        loading="lazy"
-                        decoding="async"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
-                    />
-                ) : coverArt ? (
-                    <Cover coverArt={coverArt} name={name} metric={metric}/>
-                ) : (
-                    <div className="w-full h-full bg-surface-2"/>
-                )}
-            </div>
+            {/* Live 3D cover — unique motif per project */}
+            <ProjectCanvas motif={motif3D} tint={tint || "#7c5cff"}/>
 
             <motion.div
                 aria-hidden
@@ -114,16 +71,24 @@ const ProjectCard = ({project, index, onOpen}) => {
                 style={overlayStyle}
             />
 
-            <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/30 to-transparent"/>
+            <div className="absolute inset-0 bg-gradient-to-t from-primary/95 via-primary/50 to-primary/10"/>
 
             <div className="absolute top-4 sm:top-6 left-4 sm:left-6 right-4 sm:right-6 flex items-start justify-between gap-3">
                 <span className="text-[10px] font-mono uppercase tracking-[0.3em] text-white/75 glass px-3 py-1.5 rounded-full">
                     {String(index + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.25em] text-white/75 glass px-3 py-1.5 rounded-full group-hover:text-white group-hover:bg-white/10 transition-colors">
-                    <FiPlay className="text-[9px]"/>
-                    <span>Open</span>
-                </span>
+                <div className="flex items-center gap-2">
+                    {metric && (
+                        <span className="inline-flex items-baseline gap-1.5 glass px-3 py-1.5 rounded-full">
+                            <span className="font-display text-white font-bold text-sm">{metric.value}</span>
+                            <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-white/60">{metric.label}</span>
+                        </span>
+                    )}
+                    <span className="inline-flex items-center gap-1 text-[10px] font-mono uppercase tracking-[0.25em] text-white/75 glass px-3 py-1.5 rounded-full group-hover:text-white group-hover:bg-white/10 transition-colors">
+                        <FiPlay className="text-[9px]"/>
+                        <span>Open</span>
+                    </span>
+                </div>
             </div>
 
             <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-7">
