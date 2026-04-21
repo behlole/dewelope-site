@@ -5,6 +5,8 @@ import LazyVisible from "./components/LazyVisible.jsx";
 import ScrollProgress from "./components/ScrollProgress.jsx";
 import Clients from "./components/Clients.jsx";
 
+const BackgroundScene = lazy(() => import("./components/BackgroundScene.jsx"));
+
 const Process = lazy(() => import("./components/Process.jsx"));
 const Tech = lazy(() => import("./components/Tech.jsx"));
 const Works = lazy(() => import("./components/Works.jsx"));
@@ -29,7 +31,10 @@ function App() {
             <SmoothScroll/>
             <Cursor/>
             <ScrollProgress/>
-            <div className="relative z-0 bg-primary noise-overlay overflow-x-hidden">
+            <Suspense fallback={null}>
+                <BackgroundScene/>
+            </Suspense>
+            <div className="relative z-0 bg-primary/40 noise-overlay overflow-x-hidden">
                 <Navbar/>
                 <Hero/>
                 <Clients/>

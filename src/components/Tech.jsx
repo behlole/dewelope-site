@@ -71,10 +71,9 @@ const Tech = () => {
 
             <motion.p
                 variants={fadeIn("", "", 0.1, 1)}
-                className="mt-5 text-secondary text-[17px] max-w-3xl leading-[30px]"
+                className="mt-5 text-secondary text-[16px] max-w-2xl leading-[28px]"
             >
-                Pragmatic about tools — I pick what's right for the problem. The list below is what I
-                use day-to-day on real production work, grouped by what they're for.
+                What we run in production. Grouped by purpose.
             </motion.p>
 
             {/* Marquees */}

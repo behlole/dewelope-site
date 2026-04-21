@@ -13,9 +13,8 @@ const Process = () => {
                 <h2 className={`${styles.sectionHeadText} mt-3`}>
                     A process built to <span className="text-gradient-accent">ship</span>.
                 </h2>
-                <p className="mt-5 text-secondary text-[17px] max-w-3xl leading-[30px]">
-                    Five stages, tight loops, no fluff. We pair with your team from day one and leave
-                    the codebase cleaner than we found it — whether that's six weeks or six quarters.
+                <p className="mt-5 text-secondary text-[16px] max-w-2xl leading-[28px]">
+                    Five stages, tight loops, no fluff.
                 </p>
             </motion.div>
 

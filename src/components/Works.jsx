@@ -199,10 +199,9 @@ const Works = () => {
             <div className="w-full flex">
                 <motion.p
                     variants={fadeIn("", "", 0.1, 1)}
-                    className="mt-5 text-secondary text-[17px] max-w-3xl leading-[30px]"
+                    className="mt-5 text-secondary text-[16px] max-w-2xl leading-[28px]"
                 >
-                    A short list of flagship engagements — spanning branchless banking at millions of users,
-                    pharmacy platforms, marketplaces and public-sector procurement. Numbers are real, NDAs apply.
+                    Flagship engagements. Numbers are real, NDAs apply.
                 </motion.p>
             </div>
             <div className="mt-16 sm:mt-20 flex flex-col gap-16 sm:gap-20 lg:gap-24">

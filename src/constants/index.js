@@ -34,7 +34,7 @@ export const profile = {
     lastName: "",
     role: "Modern Software House",
     tagline:
-        "We're a focused software house building enterprise platforms, financial systems and branchless-banking infrastructure — modern stacks, ship-fast mindset, banking-scale rigor.",
+        "Enterprise platforms, financial systems and branchless-banking infrastructure — shipped with banking-scale rigor.",
     shortTagline: "Modern software, engineered for scale.",
     location: "Rawalpindi, Pakistan · Remote-first",
     availability: "Available for new engagements — worldwide",
@@ -74,33 +74,33 @@ export const heroStats = [
 // Agency services — what clients hire us for
 const services = [
     {
-        title: "Full-Stack Product Engineering",
-        description: "Angular · React · Next.js · Vue on Node.js, NestJS and Spring Boot — from schema to screen.",
+        title: "Full-Stack Engineering",
+        description: "Angular, React, Next.js on Node, NestJS and Spring Boot. Schema to screen.",
         icon: web,
     },
     {
-        title: "Microservices & Cloud Platforms",
-        description: "Spring Cloud, GraphQL, REST — clean domain boundaries, CI/CD pipelines, infra that scales.",
+        title: "Microservices & Cloud",
+        description: "Spring Cloud, GraphQL, REST. Clean boundaries, CI/CD, infra that scales.",
         icon: backend,
     },
     {
-        title: "Fintech & Banking Systems",
-        description: "Branchless banking, wallets, core banking — hardened for audit, engineered for millions of users.",
+        title: "Fintech & Banking",
+        description: "Wallets, branchless banking, core flows. Audit-hardened, millions of users.",
         icon: creator,
     },
     {
         title: "Legacy Modernization",
-        description: "Query tuning, DB optimization, incremental migrations that cut latency and unblock scale.",
+        description: "Query tuning, schema migration, incremental rewrites. Latency down, scale up.",
         icon: mobile,
     },
     {
         title: "AI Integration",
-        description: "LangChain, OpenAI & Anthropic Claude — production integrations, RAG, evals and guardrails.",
+        description: "LangChain, OpenAI, Anthropic. Production RAG, evals, guardrails.",
         icon: creator,
     },
     {
         title: "Staff Augmentation",
-        description: "Senior engineers plugging into your team under your standards — not parachuted, not siloed.",
+        description: "Senior engineers into your team, under your standards. Not parachuted.",
         icon: backend,
     },
 ];
@@ -110,27 +110,27 @@ const processSteps = [
     {
         step: "01",
         title: "Discover",
-        description: "Pair with your team to map the real constraints, surface the hidden ones, and align on what success looks like — in a week, not a month.",
+        description: "Map the real constraints. Align on what success looks like. One week.",
     },
     {
         step: "02",
         title: "Architect",
-        description: "Choose the stack and the boundaries. Write a lean decision record, pick the first vertical slice, and ship it to prod behind a feature flag.",
+        description: "Pick the stack, draw the boundaries, ship the first slice behind a flag.",
     },
     {
         step: "03",
         title: "Build",
-        description: "Tight increments, continuous deployment, weekly demos. Tests where they matter, skip the ceremony that doesn't.",
+        description: "Tight increments, continuous delivery, weekly demos. No ceremony tax.",
     },
     {
         step: "04",
         title: "Harden",
-        description: "Observability, error budgets, load tests and chaos drills before launch. We leave the codebase boring on release day.",
+        description: "Observability, load tests, chaos drills. Boring on release day.",
     },
     {
         step: "05",
         title: "Hand-off or Stay",
-        description: "Full docs, runbooks and knowledge transfer — or we stick around for ongoing product work. Your call, no lock-in.",
+        description: "Full docs and knowledge transfer — or stay for ongoing product work.",
     },
 ];
 
