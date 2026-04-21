@@ -1,6 +1,15 @@
 import React, {Suspense, useEffect, useMemo, useRef, useState} from "react";
 import {Canvas, useFrame, useThree} from "@react-three/fiber";
-import {Float, Icosahedron, Sphere, Torus, TorusKnot} from "@react-three/drei";
+import {
+    ContactShadows,
+    Environment,
+    Float,
+    Icosahedron,
+    Lightformer,
+    MeshTransmissionMaterial,
+    Torus,
+    TorusKnot,
+} from "@react-three/drei";
 import * as THREE from "three";
 
 const isMobile = () =>
@@ -11,8 +20,23 @@ const prefersReducedMotion = () =>
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// Additive particle field scattered in a slab
-const ParticleField = ({count = 1000, radius = 12}) => {
+// ----------------------------------------------------------------
+// Studio lighting — lightformer rig (no external HDR)
+// ----------------------------------------------------------------
+const Studio = () => (
+    <Environment resolution={256} frames={1}>
+        <Lightformer form="rect" intensity={3.5} color="#ffffff" rotation-x={Math.PI / 2} position={[0, 8, -3]} scale={[12, 12, 1]}/>
+        <Lightformer form="rect" intensity={2.5} color="#22d3ee" rotation-y={Math.PI / 2} position={[-7, 1, -3]} scale={[30, 3, 1]}/>
+        <Lightformer form="rect" intensity={2.3} color="#7c5cff" rotation-y={-Math.PI / 2} position={[7, 1, -3]} scale={[30, 3, 1]}/>
+        <Lightformer form="circle" intensity={1.7} color="#fb7185" position={[0, 1, 7]} scale={8}/>
+        <Lightformer form="rect" intensity={0.8} color="#a3e635" position={[0, 1, -8]} rotation-y={Math.PI} scale={[15, 4, 1]}/>
+    </Environment>
+);
+
+// ----------------------------------------------------------------
+// Particle field — volumetric dust motes
+// ----------------------------------------------------------------
+const ParticleField = ({count = 900, radius = 14}) => {
     const ref = useRef();
     const {positions, colors} = useMemo(() => {
         const positions = new Float32Array(count * 3);
@@ -24,7 +48,7 @@ const ParticleField = ({count = 1000, radius = 12}) => {
             new THREE.Color("#fb7185"),
         ];
         for (let i = 0; i < count; i++) {
-            const r = Math.pow(Math.random(), 0.6) * radius;
+            const r = Math.pow(Math.random(), 0.55) * radius;
             const theta = Math.random() * Math.PI * 2;
             const phi = Math.acos(2 * Math.random() - 1);
             positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
@@ -41,8 +65,8 @@ const ParticleField = ({count = 1000, radius = 12}) => {
     useFrame((state) => {
         if (!ref.current) return;
         const t = state.clock.getElapsedTime();
-        ref.current.rotation.y = t * 0.025;
-        ref.current.rotation.x = Math.sin(t * 0.05) * 0.1;
+        ref.current.rotation.y = t * 0.022;
+        ref.current.rotation.x = Math.sin(t * 0.05) * 0.08;
     });
 
     return (
@@ -52,10 +76,10 @@ const ParticleField = ({count = 1000, radius = 12}) => {
                 <bufferAttribute attach="attributes-color" count={count} array={colors} itemSize={3}/>
             </bufferGeometry>
             <pointsMaterial
-                size={0.04}
+                size={0.035}
                 sizeAttenuation
                 transparent
-                opacity={0.9}
+                opacity={0.85}
                 vertexColors
                 depthWrite={false}
                 blending={THREE.AdditiveBlending}
@@ -64,120 +88,239 @@ const ParticleField = ({count = 1000, radius = 12}) => {
     );
 };
 
-// Core: torus knot + orbit rings + satellites.
-// Camera dolly + mouse parallax handled by CameraRig.
-const Core = ({reduceMotion, mobile, mouseRef}) => {
-    const group = useRef();
-    const knot = useRef();
-    const ring1 = useRef();
-    const ring2 = useRef();
-    const ring3 = useRef();
-    const sat1 = useRef();
-    const sat2 = useRef();
-    const sat3 = useRef();
+// ----------------------------------------------------------------
+// One orbit ring with satellites + traveling data pulse
+// ----------------------------------------------------------------
+const OrbitLayer = ({
+    radius,
+    tubeRadius = 0.012,
+    rotation,
+    color,
+    speed = 0.15,
+    satellites = 2,
+    satelliteColor,
+    pulseSpeed = 0.6,
+    reverse = false,
+    reduceMotion,
+}) => {
+    const ringRef = useRef();
+    const satRefs = useRef([]);
+    const pulseRef = useRef();
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
+        const dir = reverse ? -1 : 1;
 
-        if (group.current) {
-            group.current.rotation.y = THREE.MathUtils.lerp(
-                group.current.rotation.y,
-                t * 0.05 + (mouseRef.current?.x || 0) * 0.35,
-                0.08
-            );
-            group.current.rotation.x = THREE.MathUtils.lerp(
-                group.current.rotation.x,
-                Math.sin(t * 0.1) * 0.08 - (mouseRef.current?.y || 0) * 0.25,
-                0.08
-            );
+        if (ringRef.current) {
+            ringRef.current.rotation.z = t * speed * dir;
         }
-        if (!reduceMotion && knot.current) {
-            knot.current.rotation.x = t * 0.25;
-            knot.current.rotation.y = t * 0.35;
+        // Satellites distributed evenly around the ring
+        satRefs.current.forEach((ref, i) => {
+            if (!ref) return;
+            const angle = t * speed * dir + (i / satellites) * Math.PI * 2;
+            ref.position.x = Math.cos(angle) * radius;
+            ref.position.z = Math.sin(angle) * radius;
+            ref.rotation.x = t + i;
+            ref.rotation.y = t * 0.7 + i;
+        });
+        // Pulse — a bright emissive bead traveling along the ring
+        if (pulseRef.current) {
+            const angle = t * pulseSpeed * dir + (reverse ? Math.PI : 0);
+            pulseRef.current.position.x = Math.cos(angle) * radius;
+            pulseRef.current.position.z = Math.sin(angle) * radius;
         }
-        if (ring1.current) ring1.current.rotation.z = t * 0.2;
-        if (ring2.current) ring2.current.rotation.z = -t * 0.15;
-        if (ring3.current) ring3.current.rotation.z = t * 0.1;
-
-        // Tiny floating satellites on different orbits
-        const s = (ref, r, sp, ph, tilt) => {
-            if (!ref.current) return;
-            const theta = t * sp + ph;
-            ref.current.position.x = Math.cos(theta) * r;
-            ref.current.position.z = Math.sin(theta) * r;
-            ref.current.position.y = Math.sin(theta * 0.6 + tilt) * 0.6;
-            ref.current.rotation.x = theta;
-            ref.current.rotation.y = theta * 0.8;
-        };
-        s(sat1, 2.4, 0.6, 0, 0);
-        s(sat2, 2.9, -0.45, 1.8, 0.4);
-        s(sat3, 3.35, 0.3, 3.1, -0.3);
     });
 
     return (
-        <group ref={group}>
-            <Sphere args={[2.8, 24, 24]}>
-                <meshBasicMaterial color="#7c5cff" transparent opacity={0.035}/>
-            </Sphere>
+        <group rotation={rotation}>
+            <Torus ref={ringRef} args={[radius, tubeRadius, 16, 140]}>
+                <meshStandardMaterial
+                    color={color}
+                    emissive={color}
+                    emissiveIntensity={1.6}
+                    toneMapped={false}
+                />
+            </Torus>
 
-            <Float speed={reduceMotion ? 0 : 1.2} rotationIntensity={0.3} floatIntensity={0.9}>
-                <TorusKnot ref={knot} args={[1.1, 0.28, mobile ? 140 : 220, mobile ? 18 : 28]}>
-                    <meshStandardMaterial
-                        color="#8b6bff"
-                        emissive="#4c2dff"
-                        emissiveIntensity={0.55}
-                        roughness={0.25}
-                        metalness={0.45}
-                        flatShading
+            {/* Satellite nodes */}
+            {Array.from({length: satellites}).map((_, i) => (
+                <mesh key={i} ref={(el) => (satRefs.current[i] = el)}>
+                    <boxGeometry args={[0.12, 0.12, 0.12]}/>
+                    <meshPhysicalMaterial
+                        color={satelliteColor || color}
+                        emissive={satelliteColor || color}
+                        emissiveIntensity={0.6}
+                        metalness={0.7}
+                        roughness={0.18}
+                        clearcoat={1}
+                        clearcoatRoughness={0.1}
+                        envMapIntensity={1.3}
                     />
-                </TorusKnot>
-            </Float>
+                </mesh>
+            ))}
 
-            <Torus ref={ring1} args={[2.4, 0.014, 16, 120]} rotation={[Math.PI / 2.2, 0, 0]}>
-                <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.6} toneMapped={false}/>
-            </Torus>
-            <Torus ref={ring2} args={[2.9, 0.010, 16, 120]} rotation={[Math.PI / 1.7, Math.PI / 4, 0]}>
-                <meshStandardMaterial color="#7c5cff" emissive="#7c5cff" emissiveIntensity={1.4} toneMapped={false}/>
-            </Torus>
-            <Torus ref={ring3} args={[3.35, 0.007, 16, 120]} rotation={[Math.PI / 2.8, Math.PI / 1.8, 0]}>
-                <meshStandardMaterial color="#a3e635" emissive="#a3e635" emissiveIntensity={1.15} toneMapped={false}/>
-            </Torus>
-
-            <group ref={sat1}>
-                <Icosahedron args={[0.14, 0]}>
-                    <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} toneMapped={false}/>
-                </Icosahedron>
-            </group>
-            <group ref={sat2}>
-                <Icosahedron args={[0.11, 0]}>
-                    <meshStandardMaterial color="#7c5cff" emissive="#7c5cff" emissiveIntensity={1.2} toneMapped={false}/>
-                </Icosahedron>
-            </group>
-            {!mobile && (
-                <group ref={sat3}>
-                    <Sphere args={[0.08, 12, 12]}>
-                        <meshStandardMaterial color="#a3e635" emissive="#a3e635" emissiveIntensity={1.4} toneMapped={false}/>
-                    </Sphere>
-                </group>
-            )}
+            {/* Traveling data pulse */}
+            <mesh ref={pulseRef}>
+                <sphereGeometry args={[0.055, 16, 16]}/>
+                <meshBasicMaterial color={color} toneMapped={false}/>
+            </mesh>
         </group>
     );
 };
 
-// Scroll-linked camera that dollies back and pans as the hero scrolls out of view
+// ----------------------------------------------------------------
+// Architecture core — glass platform surrounded by service rings
+// ----------------------------------------------------------------
+const ArchitectureCore = ({reduceMotion, mobile, mouseRef}) => {
+    const group = useRef();
+    const coreA = useRef();
+    const coreB = useRef();
+
+    useFrame((state) => {
+        const t = state.clock.getElapsedTime();
+        if (group.current) {
+            group.current.rotation.y = THREE.MathUtils.lerp(
+                group.current.rotation.y,
+                t * 0.08 + (mouseRef.current?.x || 0) * 0.35,
+                0.06
+            );
+            group.current.rotation.x = THREE.MathUtils.lerp(
+                group.current.rotation.x,
+                -0.12 - (mouseRef.current?.y || 0) * 0.25,
+                0.06
+            );
+        }
+        if (!reduceMotion) {
+            if (coreA.current) {
+                coreA.current.rotation.x = t * 0.25;
+                coreA.current.rotation.y = t * 0.32;
+            }
+            if (coreB.current) {
+                coreB.current.rotation.x = -t * 0.4;
+                coreB.current.rotation.y = -t * 0.35;
+            }
+        }
+    });
+
+    return (
+        <group ref={group}>
+            {/* Soft ambient halo sphere */}
+            <mesh>
+                <sphereGeometry args={[3.5, 24, 24]}/>
+                <meshBasicMaterial color="#7c5cff" transparent opacity={0.025}/>
+            </mesh>
+
+            {/* Central platform — glass icosahedron with internal wireframe shard */}
+            <Float speed={reduceMotion ? 0 : 1.1} rotationIntensity={0.2} floatIntensity={0.7}>
+                <group>
+                    <mesh ref={coreA}>
+                        <icosahedronGeometry args={[1.15, 0]}/>
+                        <MeshTransmissionMaterial
+                            backside
+                            samples={mobile ? 3 : 6}
+                            resolution={mobile ? 256 : 512}
+                            transmission={1}
+                            roughness={0.08}
+                            thickness={1.2}
+                            ior={1.45}
+                            chromaticAberration={0.03}
+                            distortion={0.18}
+                            distortionScale={0.5}
+                            temporalDistortion={0.1}
+                            color="#a78bfa"
+                            envMapIntensity={1.7}
+                        />
+                    </mesh>
+                    {/* Inner glowing wireframe shard — reveals through the glass */}
+                    <mesh ref={coreB}>
+                        <icosahedronGeometry args={[0.62, 1]}/>
+                        <meshBasicMaterial
+                            color="#22d3ee"
+                            wireframe
+                            transparent
+                            opacity={0.75}
+                            toneMapped={false}
+                        />
+                    </mesh>
+                </group>
+            </Float>
+
+            {/* Three service orbit layers — distinct angles and colors */}
+            <OrbitLayer
+                radius={2.0}
+                tubeRadius={0.016}
+                rotation={[Math.PI / 2.2, 0, 0]}
+                color="#22d3ee"
+                satelliteColor="#22d3ee"
+                satellites={2}
+                speed={0.25}
+                pulseSpeed={0.9}
+                reduceMotion={reduceMotion}
+            />
+            <OrbitLayer
+                radius={2.5}
+                tubeRadius={0.012}
+                rotation={[Math.PI / 1.7, Math.PI / 4, 0]}
+                color="#7c5cff"
+                satelliteColor="#a78bfa"
+                satellites={3}
+                speed={0.18}
+                pulseSpeed={0.75}
+                reverse
+                reduceMotion={reduceMotion}
+            />
+            <OrbitLayer
+                radius={3.0}
+                tubeRadius={0.01}
+                rotation={[Math.PI / 2.8, Math.PI / 1.8, 0]}
+                color="#a3e635"
+                satelliteColor="#a3e635"
+                satellites={2}
+                speed={0.12}
+                pulseSpeed={0.6}
+                reduceMotion={reduceMotion}
+            />
+
+            {/* Subtle hexagonal grid floor — reads as an architectural plan */}
+            {!mobile && (
+                <mesh position={[0, -2.4, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                    <circleGeometry args={[4.5, 6]}/>
+                    <meshStandardMaterial
+                        color="#0b0d1a"
+                        transparent
+                        opacity={0.3}
+                        metalness={0.8}
+                        roughness={0.35}
+                        side={THREE.DoubleSide}
+                    />
+                </mesh>
+            )}
+            <ContactShadows
+                position={[0, -2.38, 0]}
+                opacity={0.45}
+                blur={3}
+                far={5}
+                scale={8}
+                color="#06070d"
+            />
+        </group>
+    );
+};
+
+// ----------------------------------------------------------------
+// Camera rig — scroll-linked dolly + mouse parallax
+// ----------------------------------------------------------------
 const CameraRig = ({mouseRef}) => {
     const {camera} = useThree();
-    const base = useRef({z: 9, yRot: 0});
+    const base = useRef({z: 9, y: 0.2});
     useFrame(() => {
-        // Scroll progress: 0 at top of page, 1 once the hero is fully scrolled past
         let p = 0;
         if (typeof window !== "undefined") {
             p = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
         }
-        // Dolly out and tilt slightly as you scroll; also parallax with mouse
         const targetZ = base.current.z + p * 2.5;
-        const targetX = (mouseRef.current?.x || 0) * 0.6;
-        const targetY = -(mouseRef.current?.y || 0) * 0.4 - p * 0.6;
+        const targetX = (mouseRef.current?.x || 0) * 0.7;
+        const targetY = base.current.y - (mouseRef.current?.y || 0) * 0.45 - p * 0.7;
 
         camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.06);
         camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.06);
@@ -187,6 +330,9 @@ const CameraRig = ({mouseRef}) => {
     return null;
 };
 
+// ----------------------------------------------------------------
+// Host canvas
+// ----------------------------------------------------------------
 const HeroScene = () => {
     const wrapRef = useRef(null);
     const mouseRef = useRef({x: 0, y: 0});
@@ -235,19 +381,16 @@ const HeroScene = () => {
                     antialias: !mobile,
                     alpha: true,
                     powerPreference: "high-performance",
+                    toneMapping: THREE.ACESFilmicToneMapping,
+                    outputColorSpace: THREE.SRGBColorSpace,
                 }}
-                camera={{position: [0, 0, 9], fov: 34, near: 0.1, far: 200}}
+                camera={{position: [0, 0.2, 9], fov: 34, near: 0.1, far: 200}}
             >
                 <Suspense fallback={null}>
-                    <ambientLight intensity={0.55}/>
-                    <hemisphereLight color="#a78bfa" groundColor="#06070d" intensity={0.8}/>
-                    <directionalLight position={[5, 5, 5]} intensity={1.7} color="#a78bfa"/>
-                    <pointLight position={[-5, -3, -2]} intensity={1.3} color="#22d3ee"/>
-                    <pointLight position={[5, -2, 3]} intensity={1.0} color="#fb7185"/>
-                    {!mobile && <pointLight position={[0, 4, -4]} intensity={0.8} color="#7c5cff"/>}
+                    <Studio/>
                     <CameraRig mouseRef={mouseRef}/>
-                    <Core reduceMotion={reduceMotion} mobile={mobile} mouseRef={mouseRef}/>
-                    <ParticleField count={mobile ? 500 : 1000} radius={mobile ? 8 : 12}/>
+                    <ArchitectureCore reduceMotion={reduceMotion} mobile={mobile} mouseRef={mouseRef}/>
+                    <ParticleField count={mobile ? 450 : 900} radius={mobile ? 10 : 14}/>
                 </Suspense>
             </Canvas>
         </div>
