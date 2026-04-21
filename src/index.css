@@ -40,6 +40,17 @@ html.lenis, html.lenis body { height: auto; }
   border-radius: 6px;
 }
 
+/* Hide system cursor when custom cursor is active; restore inside form fields */
+html.has-custom-cursor,
+html.has-custom-cursor * {
+  cursor: none !important;
+}
+html.has-custom-cursor input,
+html.has-custom-cursor textarea,
+html.has-custom-cursor [data-cursor="native"] {
+  cursor: auto !important;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #0c0e1a; }

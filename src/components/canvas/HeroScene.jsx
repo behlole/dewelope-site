@@ -1,6 +1,6 @@
 import React, {Suspense, useEffect, useMemo, useRef, useState} from "react";
-import {Canvas, useFrame} from "@react-three/fiber";
-import {Float, TorusKnot, Icosahedron, Sphere, Torus} from "@react-three/drei";
+import {Canvas, useFrame, useThree} from "@react-three/fiber";
+import {Float, Icosahedron, Sphere, Torus, TorusKnot} from "@react-three/drei";
 import * as THREE from "three";
 
 const isMobile = () =>
@@ -11,8 +11,8 @@ const prefersReducedMotion = () =>
     typeof window !== "undefined" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-// A cloud of additive-blended points scattered in a slab that fills the frame
-const ParticleField = ({count = 1200, radius = 12}) => {
+// Additive particle field scattered in a slab
+const ParticleField = ({count = 1000, radius = 12}) => {
     const ref = useRef();
     const {positions, colors} = useMemo(() => {
         const positions = new Float32Array(count * 3);
@@ -29,7 +29,7 @@ const ParticleField = ({count = 1200, radius = 12}) => {
             const phi = Math.acos(2 * Math.random() - 1);
             positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
             positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-            positions[i * 3 + 2] = r * Math.cos(phi) * 0.6;
+            positions[i * 3 + 2] = r * Math.cos(phi) * 0.7;
             const c = palette[Math.floor(Math.random() * palette.length)];
             colors[i * 3] = c.r;
             colors[i * 3 + 1] = c.g;
@@ -41,7 +41,7 @@ const ParticleField = ({count = 1200, radius = 12}) => {
     useFrame((state) => {
         if (!ref.current) return;
         const t = state.clock.getElapsedTime();
-        ref.current.rotation.y = t * 0.02;
+        ref.current.rotation.y = t * 0.025;
         ref.current.rotation.x = Math.sin(t * 0.05) * 0.1;
     });
 
@@ -64,40 +64,32 @@ const ParticleField = ({count = 1200, radius = 12}) => {
     );
 };
 
-// Scroll-linked core: torus knot with orbit rings, slowly drifts down and rotates
-const DriftCore = ({scrollTargetRef, mouseRef, reduceMotion, mobile}) => {
+// Core: torus knot + orbit rings + satellites.
+// Camera dolly + mouse parallax handled by CameraRig.
+const Core = ({reduceMotion, mobile, mouseRef}) => {
     const group = useRef();
     const knot = useRef();
     const ring1 = useRef();
     const ring2 = useRef();
     const ring3 = useRef();
+    const sat1 = useRef();
+    const sat2 = useRef();
+    const sat3 = useRef();
 
     useFrame((state) => {
         const t = state.clock.getElapsedTime();
 
-        // Pull current scroll progress from the DOM. Keeps this decoupled from React state
-        // so we don't re-render the tree on every pixel of scroll.
-        let progress = 0;
-        if (typeof window !== "undefined") {
-            const h = document.documentElement;
-            const max = h.scrollHeight - h.clientHeight;
-            progress = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
-        }
-
         if (group.current) {
-            // Drift the whole group downward and to the right as we scroll
-            group.current.position.y = THREE.MathUtils.lerp(
-                group.current.position.y,
-                -progress * 6 + (mouseRef.current?.y || 0) * 0.4,
+            group.current.rotation.y = THREE.MathUtils.lerp(
+                group.current.rotation.y,
+                t * 0.05 + (mouseRef.current?.x || 0) * 0.35,
                 0.08
             );
-            group.current.position.x = THREE.MathUtils.lerp(
-                group.current.position.x,
-                progress * 2.5 + (mouseRef.current?.x || 0) * 0.6,
+            group.current.rotation.x = THREE.MathUtils.lerp(
+                group.current.rotation.x,
+                Math.sin(t * 0.1) * 0.08 - (mouseRef.current?.y || 0) * 0.25,
                 0.08
             );
-            group.current.rotation.y = t * 0.05 + progress * Math.PI * 1.2;
-            group.current.rotation.x = Math.sin(t * 0.1) * 0.08 + progress * 0.25;
         }
         if (!reduceMotion && knot.current) {
             knot.current.rotation.x = t * 0.25;
@@ -106,17 +98,29 @@ const DriftCore = ({scrollTargetRef, mouseRef, reduceMotion, mobile}) => {
         if (ring1.current) ring1.current.rotation.z = t * 0.2;
         if (ring2.current) ring2.current.rotation.z = -t * 0.15;
         if (ring3.current) ring3.current.rotation.z = t * 0.1;
+
+        // Tiny floating satellites on different orbits
+        const s = (ref, r, sp, ph, tilt) => {
+            if (!ref.current) return;
+            const theta = t * sp + ph;
+            ref.current.position.x = Math.cos(theta) * r;
+            ref.current.position.z = Math.sin(theta) * r;
+            ref.current.position.y = Math.sin(theta * 0.6 + tilt) * 0.6;
+            ref.current.rotation.x = theta;
+            ref.current.rotation.y = theta * 0.8;
+        };
+        s(sat1, 2.4, 0.6, 0, 0);
+        s(sat2, 2.9, -0.45, 1.8, 0.4);
+        s(sat3, 3.35, 0.3, 3.1, -0.3);
     });
 
     return (
-        <group ref={group} position={[0, 0, 0]}>
-            {/* halo */}
-            <Sphere args={[3.4, 24, 24]}>
-                <meshBasicMaterial color="#7c5cff" transparent opacity={0.04}/>
+        <group ref={group}>
+            <Sphere args={[2.8, 24, 24]}>
+                <meshBasicMaterial color="#7c5cff" transparent opacity={0.035}/>
             </Sphere>
 
-            {/* core knot */}
-            <Float speed={reduceMotion ? 0 : 1.1} rotationIntensity={0.3} floatIntensity={0.9}>
+            <Float speed={reduceMotion ? 0 : 1.2} rotationIntensity={0.3} floatIntensity={0.9}>
                 <TorusKnot ref={knot} args={[1.1, 0.28, mobile ? 140 : 220, mobile ? 18 : 28]}>
                     <meshStandardMaterial
                         color="#8b6bff"
@@ -129,7 +133,6 @@ const DriftCore = ({scrollTargetRef, mouseRef, reduceMotion, mobile}) => {
                 </TorusKnot>
             </Float>
 
-            {/* orbit rings */}
             <Torus ref={ring1} args={[2.4, 0.014, 16, 120]} rotation={[Math.PI / 2.2, 0, 0]}>
                 <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.6} toneMapped={false}/>
             </Torus>
@@ -140,27 +143,54 @@ const DriftCore = ({scrollTargetRef, mouseRef, reduceMotion, mobile}) => {
                 <meshStandardMaterial color="#a3e635" emissive="#a3e635" emissiveIntensity={1.15} toneMapped={false}/>
             </Torus>
 
-            {/* orbital shards */}
+            <group ref={sat1}>
+                <Icosahedron args={[0.14, 0]}>
+                    <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.2} toneMapped={false}/>
+                </Icosahedron>
+            </group>
+            <group ref={sat2}>
+                <Icosahedron args={[0.11, 0]}>
+                    <meshStandardMaterial color="#7c5cff" emissive="#7c5cff" emissiveIntensity={1.2} toneMapped={false}/>
+                </Icosahedron>
+            </group>
             {!mobile && (
-                <>
-                    <Icosahedron args={[0.14, 0]} position={[2.4, 0, 0]}>
-                        <meshStandardMaterial color="#22d3ee" emissive="#22d3ee" emissiveIntensity={1.1} toneMapped={false}/>
-                    </Icosahedron>
-                    <Icosahedron args={[0.11, 0]} position={[-2.6, 0.6, 0]}>
-                        <meshStandardMaterial color="#7c5cff" emissive="#7c5cff" emissiveIntensity={1.1} toneMapped={false}/>
-                    </Icosahedron>
-                    <Icosahedron args={[0.08, 0]} position={[0, 2.9, -0.5]}>
-                        <meshStandardMaterial color="#a3e635" emissive="#a3e635" emissiveIntensity={1.1} toneMapped={false}/>
-                    </Icosahedron>
-                </>
+                <group ref={sat3}>
+                    <Sphere args={[0.08, 12, 12]}>
+                        <meshStandardMaterial color="#a3e635" emissive="#a3e635" emissiveIntensity={1.4} toneMapped={false}/>
+                    </Sphere>
+                </group>
             )}
         </group>
     );
 };
 
-const BackgroundScene = () => {
+// Scroll-linked camera that dollies back and pans as the hero scrolls out of view
+const CameraRig = ({mouseRef}) => {
+    const {camera} = useThree();
+    const base = useRef({z: 9, yRot: 0});
+    useFrame(() => {
+        // Scroll progress: 0 at top of page, 1 once the hero is fully scrolled past
+        let p = 0;
+        if (typeof window !== "undefined") {
+            p = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
+        }
+        // Dolly out and tilt slightly as you scroll; also parallax with mouse
+        const targetZ = base.current.z + p * 2.5;
+        const targetX = (mouseRef.current?.x || 0) * 0.6;
+        const targetY = -(mouseRef.current?.y || 0) * 0.4 - p * 0.6;
+
+        camera.position.x = THREE.MathUtils.lerp(camera.position.x, targetX, 0.06);
+        camera.position.y = THREE.MathUtils.lerp(camera.position.y, targetY, 0.06);
+        camera.position.z = THREE.MathUtils.lerp(camera.position.z, targetZ, 0.06);
+        camera.lookAt(0, 0, 0);
+    });
+    return null;
+};
+
+const HeroScene = () => {
     const wrapRef = useRef(null);
     const mouseRef = useRef({x: 0, y: 0});
+    const [inView, setInView] = useState(true);
     const [mobile] = useState(isMobile);
     const [reduceMotion] = useState(prefersReducedMotion);
 
@@ -175,43 +205,53 @@ const BackgroundScene = () => {
         return () => window.removeEventListener("pointermove", onMove);
     }, []);
 
+    useEffect(() => {
+        if (!wrapRef.current || typeof IntersectionObserver === "undefined") return;
+        const obs = new IntersectionObserver(
+            ([e]) => setInView(e.isIntersecting),
+            {rootMargin: "200px 0px"}
+        );
+        obs.observe(wrapRef.current);
+        return () => obs.disconnect();
+    }, []);
+
     return (
         <div
             ref={wrapRef}
             aria-hidden
-            className="fixed inset-0 -z-10 pointer-events-none"
+            className="absolute inset-0 pointer-events-none"
             style={{
-                // A very subtle gradient vignette that blends the 3D into the UI
                 maskImage:
-                    "radial-gradient(ellipse at 50% 35%, black 55%, rgba(0,0,0,0.85) 75%, rgba(0,0,0,0.6) 100%)",
+                    "radial-gradient(ellipse at 50% 45%, black 55%, rgba(0,0,0,0.85) 75%, rgba(0,0,0,0.35) 100%)",
                 WebkitMaskImage:
-                    "radial-gradient(ellipse at 50% 35%, black 55%, rgba(0,0,0,0.85) 75%, rgba(0,0,0,0.6) 100%)",
+                    "radial-gradient(ellipse at 50% 45%, black 55%, rgba(0,0,0,0.85) 75%, rgba(0,0,0,0.35) 100%)",
             }}
         >
             <Canvas
                 shadows={false}
-                frameloop={reduceMotion ? "demand" : "always"}
+                frameloop={inView && !reduceMotion ? "always" : "demand"}
                 dpr={mobile ? [1, 1.2] : [1, 1.6]}
                 gl={{
                     antialias: !mobile,
                     alpha: true,
                     powerPreference: "high-performance",
                 }}
-                camera={{position: [0, 0, 9], fov: 32, near: 0.1, far: 200}}
+                camera={{position: [0, 0, 9], fov: 34, near: 0.1, far: 200}}
             >
                 <Suspense fallback={null}>
                     <ambientLight intensity={0.55}/>
                     <hemisphereLight color="#a78bfa" groundColor="#06070d" intensity={0.8}/>
-                    <directionalLight position={[5, 5, 5]} intensity={1.6} color="#a78bfa"/>
-                    <pointLight position={[-5, -3, -2]} intensity={1.2} color="#22d3ee"/>
+                    <directionalLight position={[5, 5, 5]} intensity={1.7} color="#a78bfa"/>
+                    <pointLight position={[-5, -3, -2]} intensity={1.3} color="#22d3ee"/>
                     <pointLight position={[5, -2, 3]} intensity={1.0} color="#fb7185"/>
                     {!mobile && <pointLight position={[0, 4, -4]} intensity={0.8} color="#7c5cff"/>}
-                    <DriftCore mouseRef={mouseRef} reduceMotion={reduceMotion} mobile={mobile}/>
-                    <ParticleField count={mobile ? 600 : 1200} radius={mobile ? 8 : 12}/>
+                    <CameraRig mouseRef={mouseRef}/>
+                    <Core reduceMotion={reduceMotion} mobile={mobile} mouseRef={mouseRef}/>
+                    <ParticleField count={mobile ? 500 : 1000} radius={mobile ? 8 : 12}/>
                 </Suspense>
             </Canvas>
         </div>
     );
 };
 
-export default BackgroundScene;
+export default HeroScene;

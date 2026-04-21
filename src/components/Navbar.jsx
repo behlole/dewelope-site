@@ -14,12 +14,6 @@ const Navbar = () => {
         return () => window.removeEventListener("scroll", onScroll);
     }, []);
 
-    // Open the book's TOC overlay by dispatching a synthetic keyboard event —
-    // BookShell can listen for `dewelope:contact` to jump to last chapter.
-    const openContact = () => {
-        window.dispatchEvent(new CustomEvent("dewelope:goto", {detail: {chapterId: "start"}}));
-    };
-
     return (
         <motion.nav
             initial={{y: -40, opacity: 0}}
@@ -28,17 +22,13 @@ const Navbar = () => {
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
                 scrolled
-                    ? "py-3 bg-primary/60 backdrop-blur-xl border-b border-white/5"
+                    ? "py-3 bg-primary/70 backdrop-blur-xl border-b border-white/5"
                     : "py-5 bg-transparent"
             )}
         >
             <div className="max-w-7xl mx-auto px-4 sm:px-10 flex items-center justify-between">
                 <a
                     href="#hero"
-                    onClick={(e) => {
-                        e.preventDefault();
-                        window.dispatchEvent(new CustomEvent("dewelope:goto", {detail: {chapterId: "cover"}}));
-                    }}
                     className="flex items-center gap-3 group"
                     aria-label="Dewelope — home"
                 >
@@ -56,13 +46,13 @@ const Navbar = () => {
                     </div>
                 </a>
 
-                <button
-                    onClick={openContact}
+                <a
+                    href="#contact"
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-primary font-semibold text-sm btn-magnetic"
                 >
                     Start a project
                     <FiArrowUpRight className="text-base"/>
-                </button>
+                </a>
             </div>
         </motion.nav>
     );
