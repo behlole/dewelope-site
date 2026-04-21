@@ -1,6 +1,6 @@
 import React, {lazy, Suspense} from "react";
 import {BrowserRouter} from "react-router-dom";
-import {Cursor, Navbar, SmoothScroll} from "./components/index.js";
+import {Cursor, Navbar} from "./components/index.js";
 import ScrollProgress from "./components/ScrollProgress.jsx";
 import BookShell from "./components/BookShell.jsx";
 
@@ -9,7 +9,6 @@ const BackgroundScene = lazy(() => import("./components/BackgroundScene.jsx"));
 function App() {
     return (
         <BrowserRouter>
-            <SmoothScroll/>
             <Cursor/>
             <ScrollProgress/>
             <Suspense fallback={null}>

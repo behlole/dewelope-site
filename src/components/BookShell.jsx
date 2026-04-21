@@ -192,6 +192,69 @@ const BookShell = () => {
         };
     }, [page]);
 
+    // Scroll-triggered page turns:
+    // - Native scroll still works INSIDE each page
+    // - When the page is already scrolled to its top/bottom edge and the user
+    //   keeps scrolling in that direction, accumulate overscroll and trigger
+    //   a page flip.
+    useEffect(() => {
+        const OVERSCROLL_THRESHOLD = 140;
+        const LOCKOUT_MS = 800;
+        const EPS = 2;
+        let locked = false;
+        let accumulator = 0;
+        let resetTimer = null;
+
+        const resetAccumulator = () => {
+            accumulator = 0;
+            if (resetTimer) clearTimeout(resetTimer);
+        };
+
+        const flip = (dir) => {
+            locked = true;
+            resetAccumulator();
+            if (dir > 0) next();
+            else prev();
+            setTimeout(() => { locked = false; }, LOCKOUT_MS);
+        };
+
+        const onWheel = (e) => {
+            const el = document.getElementById("book-page-scroll");
+            if (!el) return;
+            if (locked) { e.preventDefault(); return; }
+            const dy = e.deltaY;
+            const atTop = el.scrollTop <= EPS;
+            const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - EPS;
+
+            // Down-scroll past the bottom edge
+            if (dy > 0 && atBottom) {
+                e.preventDefault();
+                accumulator += dy;
+                if (accumulator > OVERSCROLL_THRESHOLD && page < chapters.length - 1) flip(1);
+                if (resetTimer) clearTimeout(resetTimer);
+                resetTimer = setTimeout(resetAccumulator, 220);
+                return;
+            }
+            // Up-scroll past the top edge
+            if (dy < 0 && atTop) {
+                e.preventDefault();
+                accumulator += dy;
+                if (accumulator < -OVERSCROLL_THRESHOLD && page > 0) flip(-1);
+                if (resetTimer) clearTimeout(resetTimer);
+                resetTimer = setTimeout(resetAccumulator, 220);
+                return;
+            }
+            // Normal in-page scroll — let the browser handle it
+            resetAccumulator();
+        };
+
+        window.addEventListener("wheel", onWheel, {passive: false});
+        return () => {
+            window.removeEventListener("wheel", onWheel);
+            if (resetTimer) clearTimeout(resetTimer);
+        };
+    }, [page, goTo]);
+
     const chapter = chapters[page];
 
     return (
