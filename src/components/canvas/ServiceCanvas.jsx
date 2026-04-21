@@ -339,14 +339,12 @@ const ServiceCanvas = ({shape = "stack", tint = "#7c5cff"}) => {
             className="relative w-full aspect-square"
             aria-hidden
         >
-            {/* Soft studio pedestal */}
+            {/* Transparent — lets the card surface show through, no visible border */}
             <div
-                className="absolute inset-0 rounded-2xl overflow-hidden"
+                className="pointer-events-none absolute inset-0"
                 style={{
                     background:
-                        `radial-gradient(circle at 30% 25%, ${tint}22, transparent 55%),
-                         radial-gradient(circle at 70% 80%, ${tint}18, transparent 60%),
-                         linear-gradient(180deg, #0b0d1a 0%, #06070d 100%)`,
+                        `radial-gradient(circle at 50% 55%, ${tint}18, transparent 58%)`,
                 }}
             />
             {inView && (

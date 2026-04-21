@@ -79,8 +79,8 @@ const ServiceCard = ({service, index}) => {
                 </span>
                 <FiArrowUpRight className="text-white/40 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-500"/>
             </div>
-            {/* 3D motif */}
-            <div className="relative z-10 mx-6 sm:mx-7 mt-4 mb-3 rounded-2xl overflow-hidden">
+            {/* 3D motif — blends into the card; no framing border */}
+            <div className="relative z-10 -mt-2 mb-2">
                 <ServiceCanvas shape={service.shape} tint={service.tint}/>
             </div>
             {/* body */}
